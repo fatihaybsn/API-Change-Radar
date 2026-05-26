@@ -64,6 +64,21 @@ def _build_specs_payload(
     ]
 
 
+def test_openapi_schema_describes_run_specs_as_multipart_binary_uploads() -> None:
+    schema = create_app().openapi()
+    operation = schema["paths"][f"{Settings().api_prefix}/runs"]["post"]
+    request_body = operation["requestBody"]
+    multipart_schema_ref = request_body["content"]["multipart/form-data"]["schema"]["$ref"]
+    component_name = multipart_schema_ref.removeprefix("#/components/schemas/")
+    body_schema = schema["components"]["schemas"][component_name]
+
+    specs_schema = body_schema["properties"]["specs"]
+    assert specs_schema["type"] == "array"
+    assert specs_schema["items"] == {"type": "string", "format": "binary"}
+    assert "specs" in body_schema["required"]
+    assert "changelog_text" in body_schema["properties"]
+
+
 def test_create_analysis_run_happy_path_persists_expected_artifacts_with_fake_session() -> None:
     fake_session = FakeSession()
     with _build_client_with_fake_session(fake_session) as client:

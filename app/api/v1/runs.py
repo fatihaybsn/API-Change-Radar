@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import uuid
 from datetime import datetime
-from typing import Final
+from typing import Annotated, Final
 
 import structlog
 from fastapi import (
@@ -52,8 +52,6 @@ ALLOWED_SPEC_MEDIA_TYPES: Final[frozenset[str]] = frozenset(
     }
 )
 
-SPEC_FILES_FIELD = File(..., description="Exactly two OpenAPI spec files.")
-CHANGELOG_TEXT_FIELD = Form(default=None)
 DB_SESSION_DEP = Depends(get_db_session)
 
 
@@ -173,8 +171,11 @@ def process_analysis_in_background(run_id: uuid.UUID) -> None:
 @runs_router.post("", status_code=status.HTTP_201_CREATED, response_model=RunCreateResponse)
 async def create_analysis_run(
     background_tasks: BackgroundTasks,
-    specs: list[UploadFile] = SPEC_FILES_FIELD,
-    changelog_text: str | None = CHANGELOG_TEXT_FIELD,
+    specs: Annotated[
+        list[UploadFile],
+        File(description="Exactly two OpenAPI spec files."),
+    ],
+    changelog_text: Annotated[str | None, Form()] = None,
     db: Session = DB_SESSION_DEP,
 ) -> RunCreateResponse:
     """Create a pending analysis run from raw upload artifacts."""
