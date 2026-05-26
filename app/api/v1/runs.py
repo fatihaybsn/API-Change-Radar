@@ -122,7 +122,7 @@ async def _read_upload_bytes(
         byte_size += len(chunk)
         if byte_size > max_bytes:
             raise HTTPException(
-                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                 detail=f"{field_name} exceeds the {max_bytes} byte limit.",
             )
         chunks.append(chunk)
@@ -130,7 +130,7 @@ async def _read_upload_bytes(
 
     if byte_size == 0:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"{field_name} must not be empty.",
         )
 
@@ -142,7 +142,7 @@ def _build_text_artifact(run_id: uuid.UUID, changelog_text: str) -> SpecArtifact
     byte_size = len(encoded)
     if byte_size > MAX_CHANGELOG_TEXT_BYTES:
         raise HTTPException(
-            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"changelog_text exceeds the {MAX_CHANGELOG_TEXT_BYTES} byte limit.",
         )
 

@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import AliasChoices, Field
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 Environment = Literal["development", "test", "staging", "production"]
@@ -49,6 +49,24 @@ class Settings(BaseSettings):
         description="SQLAlchemy database URL",
     )
     database_echo: bool = Field(default=False, description="Enable SQLAlchemy SQL echo logging")
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_database_url(cls, value: object) -> object:
+        """Normalize hosted Postgres URLs for psycopg v3."""
+        if not isinstance(value, str):
+            return value
+
+        if value.startswith("postgresql+"):
+            return value
+
+        if value.startswith("postgres://"):
+            return value.replace("postgres://", "postgresql+psycopg://", 1)
+
+        if value.startswith("postgresql://"):
+            return value.replace("postgresql://", "postgresql+psycopg://", 1)
+
+        return value
 
     # Request correlation
     request_id_header: str = Field(default="X-Request-ID", description="Header name for request ID")
