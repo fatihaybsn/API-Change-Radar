@@ -73,8 +73,12 @@ def test_openapi_schema_describes_run_specs_as_multipart_binary_uploads() -> Non
     body_schema = schema["components"]["schemas"][component_name]
 
     specs_schema = body_schema["properties"]["specs"]
+    spec_item_schema = specs_schema["items"]
     assert specs_schema["type"] == "array"
-    assert specs_schema["items"] == {"type": "string", "format": "binary"}
+    assert spec_item_schema["type"] == "string"
+    assert spec_item_schema["format"] == "binary"
+    if "contentMediaType" in spec_item_schema:
+        assert spec_item_schema["contentMediaType"] == "application/octet-stream"
     assert "specs" in body_schema["required"]
     assert "changelog_text" in body_schema["properties"]
 
