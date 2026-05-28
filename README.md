@@ -280,5 +280,3 @@ Built by **Fatih Ayıbasan** as a backend-focused portfolio project.
 * GitHub: [fatihaybsn](https://github.com/fatihaybsn)
 
 ---
-
-> **Repo About suggestion:** `Backend service that compares OpenAPI specs, detects breaking changes, classifies risk, and produces structured reports. Live demo available.`
