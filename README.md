@@ -6,6 +6,32 @@ This project is designed as a production-minded backend portfolio project. The g
 
 \---
 
+## Live Demo
+
+- **Swagger UI:** https://api-change-radar.onrender.com/docs
+- **Health Check:** https://api-change-radar.onrender.com/healthz
+- **API Base URL:** https://api-change-radar.onrender.com/api/v1
+
+> Note: This demo runs on Render Free. The first request after inactivity may take around one minute because free web services can spin down when idle.
+
+### Try the live API in Swagger
+
+1. Open the Swagger UI link.
+2. Expand `POST /api/v1/runs`.
+3. Click `Try it out`.
+4. Upload exactly two OpenAPI spec files:
+   - `v1.yaml`
+   - `v2.yaml`
+5. Optionally enter a short `changelog_text`.
+6. Click `Execute`.
+7. Copy the returned `run_id`.
+8. Use the same ID with:
+   - `GET /api/v1/runs/{run_id}`
+   - `GET /api/v1/reports/{report_id}`
+   - `GET /api/v1/reports/{report_id}/demo`
+
+\---
+
 ## What this project does
 
 API changes often create silent breakage, release risk, and integration problems. A plain text diff is not enough for real review.
