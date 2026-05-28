@@ -1,75 +1,82 @@
 # API Change Radar
 
-API Change Radar is a FastAPI-based backend service that compares two OpenAPI specifications, detects meaningful API changes, classifies their risk level, stores the analysis, and exposes the result as JSON, Markdown, and a minimal HTML demo report.
+A FastAPI-based backend service that compares two OpenAPI specifications, detects meaningful API changes, classifies their risk level, stores the analysis in PostgreSQL, and exposes the result as JSON, Markdown, and a minimal HTML demo report.
 
-This project is designed as a production-minded backend portfolio project. The goal is not to ship a toy diff script, but a reviewable service with clear architecture, deterministic behavior, persistence, observability, and a clean Docker-first distribution flow.
+![CI](https://github.com/fatihaybsn/API-Change-Radar/actions/workflows/ci.yml/badge.svg)
+![Python 3.12](https://img.shields.io/badge/python-3.12-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-\---
+---
 
-## Live Demo
+## ⚡ Live Demo
 
-- **Swagger UI:** https://api-change-radar.onrender.com/docs
-- **Health Check:** https://api-change-radar.onrender.com/healthz
-- **API Base URL:** https://api-change-radar.onrender.com/api/v1
+> **Try it now →** [Open Swagger UI](https://api-change-radar.onrender.com/docs)
+>
+> Upload two OpenAPI specs, get a risk-classified change report in seconds.
 
-> Note: This demo runs on Render Free. The first request after inactivity may take around one minute because free web services can spin down when idle.
+| | |
+|---|---|
+| **Swagger UI** | https://api-change-radar.onrender.com/docs |
+| **Health Check** | https://api-change-radar.onrender.com/healthz |
+| **API Base** | https://api-change-radar.onrender.com/api/v1 |
 
-### Try the live API in Swagger
+> ⏳ **Cold start:** This demo runs on Render Free. The first request after inactivity may take up to 60 seconds while the container starts. Subsequent requests are fast.
 
-1. Open the Swagger UI link.
-2. Expand `POST /api/v1/runs`.
-3. Click `Try it out`.
-4. Upload exactly two OpenAPI spec files:
-   - `v1.yaml`
-   - `v2.yaml`
-5. Optionally enter a short `changelog_text`.
-6. Click `Execute`.
-7. Copy the returned `run_id`.
-8. Use the same ID with:
-   - `GET /api/v1/runs/{run_id}`
-   - `GET /api/v1/reports/{report_id}`
-   - `GET /api/v1/reports/{report_id}/demo`
+---
 
-\---
-
-## What this project does
+## What This Project Does
 
 API changes often create silent breakage, release risk, and integration problems. A plain text diff is not enough for real review.
 
-API Change Radar focuses on questions like:
+API Change Radar answers:
 
 * What changed between version A and version B?
 * Which changes are likely to break consumers?
 * Which changes are low-risk and which ones need review?
 * Can the result be persisted and retrieved as a structured report?
 
-\---
+---
 
-## Key features
+## Key Features
 
-* Compare exactly two OpenAPI specs
-* Accept JSON or YAML spec uploads
-* Optional changelog text input
-* Deterministic diff and severity classification
+* Deterministic diff and severity classification for OpenAPI specs
+* JSON and YAML spec uploads
 * PostgreSQL-backed persistence for runs, artifacts, and reports
-* Structured report retrieval API
-* Markdown export for reports
-* Minimal HTML demo report page
-* Health, readiness, and metrics endpoints
-* Optional AI changelog interpretation behind a feature flag
-* Docker-first deployment for easy local usage
+* Structured report retrieval in JSON, Markdown, and HTML demo format
+* Health, readiness, and Prometheus metrics endpoints
+* Optional AI changelog interpretation (disabled by default, non-authoritative)
+* Docker-first deployment with CI/CD pipeline
 
-\---
+---
 
-## Project status
+## Project Status
 
-Current status: **pre-MVP / active build**
+Current status: **live MVP demo / active iteration**
 
-The current version already supports the core ingestion, analysis, storage, and report retrieval flow, but the project is still evolving.
+The core flow is fully operational: ingestion → validation → normalization → deterministic diff → severity classification → persistence → structured report retrieval. The project is actively maintained and deployed on Render.
 
-\---
+---
 
-## Architecture summary
+## Try It Yourself
+
+The fastest way to test the full analysis flow — no setup needed:
+
+1. Open the [Swagger UI](https://api-change-radar.onrender.com/docs) (or `http://localhost:8000/docs` if running locally).
+2. Expand **POST /api/v1/runs**.
+3. Click **Try it out**.
+4. Upload two OpenAPI spec files (you can use `examples/v1.yaml` and `examples/v2.yaml` from this repo).
+5. Optionally enter a short `changelog_text`.
+6. Click **Execute** — you will receive a `run_id`.
+7. Use the returned `run_id` with these endpoints:
+   - **GET /api/v1/runs/{run_id}** — check processing status
+   - **GET /api/v1/reports/{run_id}** — fetch the structured JSON report
+   - **GET /api/v1/reports/{run_id}?format=markdown** — Markdown export
+   - **GET /api/v1/reports/{run_id}/demo** — minimal HTML demo report page
+
+---
+
+## Architecture Summary
 
 Main parts of the system:
 
@@ -80,13 +87,13 @@ Main parts of the system:
 * **Severity Engine**: classifies findings into risk levels
 * **Report Store**: persists runs, findings, artifacts, and report state
 * **Read API**: returns structured reports and demo views
-* **Observability Layer**: exposes logs, traces, and metrics
+* **Observability Layer**: exposes structured logs, traces, and metrics
 
-More detail can live in `docs/architecture.md`.
+See [docs/architecture.md](docs/architecture.md) for more detail.
 
-\---
+---
 
-## Tech stack
+## Tech Stack
 
 * Python 3.12
 * FastAPI
@@ -97,485 +104,139 @@ More detail can live in `docs/architecture.md`.
 * OpenTelemetry
 * GitHub Actions
 
-\---
+---
 
-## Distribution model
-
-This repository is distributed in a Docker-first way:
-
-* **GitHub repository** stores the source code, `docker-compose.yml`, `.env.example`, examples, and README
-* **Docker Hub** stores the prebuilt application image
-
-### Normal user flow
-
-A normal user does **not** need to build the image locally.
-
-They will:
-
-1. get the project folder from GitHub
-2. use the `docker-compose.yml` file in the repository
-3. pull the application image from Docker Hub
-4. start the stack with Docker Compose
-
-### Docker Hub image
-
-```text
-fatihayibasan/api-change-radar:latest
-```
-
-### Which Compose file is for what?
-
-* `docker-compose.yml` -> **release / end-user file**
-
-  * pulls the app image from Docker Hub
-  * recommended for normal usage
-* `docker-compose.dev.yml` -> **development file**
-
-  * builds the image locally
-  * intended for development and local modification
-
-If you are a normal user, use **`docker-compose.yml`**.
-
-\---
-
-## Quick start for normal users
+## Local Setup with Docker
 
 ### Prerequisites
 
-You need:
+* Docker Desktop or Docker Engine with Compose support
 
-* Docker Desktop or Docker Engine
-* Docker Compose support
-
-### 1\) Get the repository from GitHub
-
-Either clone it:
+### Steps
 
 ```bash
-git clone <YOUR\_GITHUB\_REPOSITORY\_URL>
-cd <YOUR\_REPOSITORY\_FOLDER>
-```
-
-Or download the repository ZIP from GitHub and extract it.
-
-### 2\) Create your environment file
-
-Linux / macOS:
-
-```bash
+git clone https://github.com/fatihaybsn/API-Change-Radar.git
+cd API-Change-Radar
 cp .env.example .env
-```
-
-PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-### 3\) Start the stack
-
-Recommended first run:
-
-```bash
 docker compose pull
 docker compose up -d
 ```
 
-What this does:
-
-* pulls `postgres:16`
-* pulls `fatihayibasan/api-change-radar:latest`
-* starts PostgreSQL
-* starts the FastAPI app
-* runs database migrations through the container entrypoint
-
-### 4\) Verify that the service is running
-
-Open these in your browser:
+Once the stack is running, open:
 
 * Health check: `http://localhost:8000/healthz`
-* Readiness: `http://localhost:8000/readyz`
 * Swagger UI: `http://localhost:8000/docs`
-* ReDoc: `http://localhost:8000/redoc`
-* Metrics: `http://localhost:8000/metrics`
 
-If everything is correct, `/healthz` should return:
+The `docker-compose.yml` pulls the prebuilt image from Docker Hub (`fatihayibasan/api-change-radar:latest`). Database migrations run automatically on container startup.
 
-```json
-{"status":"healthy","service":"api-change-radar"}
-```
-
-### 5\) Stop the stack
+To stop the stack:
 
 ```bash
 docker compose down
 ```
 
-To also remove the PostgreSQL volume:
+To stop and remove data volumes:
 
 ```bash
 docker compose down -v
 ```
 
-\---
+---
 
-## Updating to a newer image version
+## Development Setup
 
-If a newer image is pushed to Docker Hub, update with:
-
-```bash
-docker compose pull
-docker compose up -d
-```
-
-\---
-
-## Development setup
-
-If you want to modify the source code and build locally instead of using the Docker Hub image:
+To build the image locally and modify source code:
 
 ```bash
 docker compose -f docker-compose.dev.yml up --build -d
 ```
 
-Stop it with:
+Stop with:
 
 ```bash
 docker compose -f docker-compose.dev.yml down -v
 ```
 
-Use `docker-compose.dev.yml` only for development work.
+Migrations run automatically. For manual migration outside Docker: `alembic upgrade head`.
 
-\---
+---
 
-## How to use the application
+## Example Usage with curl
 
-This project is primarily a **backend API**, not a full frontend product.
-
-The main user-facing interface is the FastAPI interactive docs page:
-
-```text
-http://localhost:8000/docs
-```
-
-That is the easiest way to test the full flow.
-
-### Main usage flow
-
-1. Upload **exactly two** OpenAPI spec files
-2. Optionally include changelog text
-3. Receive a `run\_id`
-4. Check the run status until it becomes `completed`
-5. Fetch the final report
-6. Optionally open the demo HTML report page
-
-### Supported spec formats
-
-* JSON
-* YAML
-
-### Upload limits
-
-* exactly **two** spec files are required
-* each spec file must be non-empty
-* spec file size limit is enforced by the API
-* optional `changelog\_text` is also size-limited
-
-\---
-
-## Fastest manual test via Swagger UI
-
-Open:
-
-```text
-http://localhost:8000/docs
-```
-
-Then use these endpoints in order.
-
-### 1\) Create a run
-
-Endpoint:
-
-```text
-POST /api/v1/runs
-```
-
-Input:
-
-* `specs`: upload two files
-* `changelog\_text`: optional text
-
-Response example:
-
-```json
-{
-  "run\_id": "8a0d1d9e-0000-0000-0000-000000000000",
-  "status": "pending"
-}
-```
-
-### 2\) Check run status
-
-Endpoint:
-
-```text
-GET /api/v1/runs/{run\_id}
-```
-
-Wait until `status` becomes `completed`.
-
-### 3\) Fetch the JSON report
-
-Endpoint:
-
-```text
-GET /api/v1/reports/{report\_id}
-```
-
-At the moment, `report\_id` is the same UUID as the `run\_id`.
-
-### 4\) Fetch the Markdown report
-
-Endpoint:
-
-```text
-GET /api/v1/reports/{report\_id}?format=markdown
-```
-
-### 5\) Open the minimal HTML demo report
-
-You can open either of these:
-
-```text
-GET /api/v1/reports/{report\_id}/demo
-GET /api/v1/demo/runs/{report\_id}
-```
-
-\---
-
-## Example test files included in the repo
-
-The repository includes example specs in:
-
-* `examples/v1.yaml`
-* `examples/v2.yaml`
-
-You can use them directly in Swagger UI or with `curl`.
-
-\---
-
-## Example usage with curl
-
-### Create a run
+Create a run:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/runs \\
-  -F "specs=@examples/v1.yaml;type=application/yaml" \\
-  -F "specs=@examples/v2.yaml;type=application/yaml" \\
-  -F "changelog\_text=Example changelog for demo"
+curl -X POST http://localhost:8000/api/v1/runs \
+  -F "specs=@examples/v1.yaml;type=application/yaml" \
+  -F "specs=@examples/v2.yaml;type=application/yaml" \
+  -F "changelog_text=Example changelog for demo"
 ```
 
-This returns a `run\_id`.
-
-### Check the run status
+Fetch the report (replace `<RUN_ID>` with the returned `run_id`):
 
 ```bash
-curl http://localhost:8000/api/v1/runs/<RUN\_ID>
+curl http://localhost:8000/api/v1/reports/<RUN_ID>
+curl "http://localhost:8000/api/v1/reports/<RUN_ID>?format=markdown"
 ```
 
-### Fetch the JSON report
+Open the demo HTML report in the browser:
 
-```bash
-curl http://localhost:8000/api/v1/reports/<RUN\_ID>
+```
+http://localhost:8000/api/v1/reports/<RUN_ID>/demo
 ```
 
-### Fetch the Markdown report
+---
 
-```bash
-curl "http://localhost:8000/api/v1/reports/<RUN\_ID>?format=markdown"
-```
+## Design Principles
 
-### Open the demo HTML page in the browser
-
-```text
-http://localhost:8000/api/v1/reports/<RUN\_ID>/demo
-```
-
-\---
-
-## One-shot smoke test
-
-A simple smoke script is included for an end-to-end check.
-
-Linux / macOS / Git Bash / WSL:
-
-```bash
-chmod +x scripts/smoke.sh
-./scripts/smoke.sh
-```
-
-What it does:
-
-* waits for `/healthz`
-* creates sample spec files
-* submits a run
-* waits for background processing to finish
-* fetches the final Markdown report
-
-\---
-
-## API surface summary
-
-### Base URLs
-
-* Root: `/`
-* API prefix: `/api/v1`
-
-### Health and observability
-
-* `GET /healthz`
-* `GET /readyz`
-* `GET /metrics`
-
-### Runs
-
-* `POST /api/v1/runs`
-* `GET /api/v1/runs/{run\_id}`
-
-### Reports
-
-* `GET /api/v1/reports/{report\_id}`
-* `GET /api/v1/reports/{report\_id}?format=markdown`
-* `GET /api/v1/reports/{report\_id}/demo`
-* `GET /api/v1/demo/runs/{report\_id}`
-
-\---
-
-## Environment variables
-
-Below are the most important settings for normal usage.
-
-|Variable|Example / Default|Description|
-|-|-|-|
-|`APP\_NAME`|`api-change-radar`|Service name used in app metadata/logging|
-|`ENVIRONMENT`|`production` or `development`|Environment label|
-|`DEBUG`|`false`|Enables debug-style behavior|
-|`DOCS\_ENABLED`|`true`|Enables `/docs` and `/redoc`|
-|`APP\_PORT`|`8000`|Host port exposed by Docker Compose|
-|`POSTGRES\_USER`|`radar`|PostgreSQL user|
-|`POSTGRES\_PASSWORD`|`radar`|PostgreSQL password|
-|`POSTGRES\_DB`|`api\_change\_radar`|PostgreSQL database name|
-|`DATABASE\_URL`|generated in compose|Database connection string used by the app|
-|`LOG\_LEVEL`|`INFO`|Logging level|
-|`TRACING\_EXPORTER`|`none`|Trace export mode|
-|`OTLP\_ENDPOINT`|empty|OTLP collector URL when tracing is enabled|
-|`ENABLE\_LLM\_CHANGELOG`|`false`|Enables optional AI changelog interpretation|
-|`LLM\_LOW\_CONFIDENCE\_THRESHOLD`|`0.6`|AI confidence threshold|
-
-### Recommended `.env` example for Docker usage
-
-```env
-IMAGE\_TAG=latest
-APP\_PORT=8000
-POSTGRES\_USER=radar
-POSTGRES\_PASSWORD=radar
-POSTGRES\_DB=api\_change\_radar
-APP\_NAME=api-change-radar
-ENVIRONMENT=production
-DEBUG=false
-DOCS\_ENABLED=true
-LOG\_LEVEL=INFO
-TRACING\_EXPORTER=none
-ENABLE\_LLM\_CHANGELOG=false
-LLM\_LOW\_CONFIDENCE\_THRESHOLD=0.6
-```
-
-\---
-
-## Local database and migrations
-
-Database migrations are managed with Alembic.
-
-When you run the Docker stack, migrations are executed automatically by the application container entrypoint before the FastAPI server starts.
-
-If you run the project manually outside Docker, typical migration commands are:
-
-```bash
-alembic upgrade head
-alembic downgrade base
-```
-
-\---
-
-## CI summary
-
-The repository includes GitHub Actions-based CI with checks for formatting, linting, migrations, tests, and container validation.
-
-\---
-
-## Design principles
-
-* deterministic logic first
-* explicit over clever
-* narrow scope over broad ambition
-* tests for meaningful business logic
-* observability is part of the system
+* Deterministic logic first
+* Explicit over clever
+* Narrow scope over broad ambition
+* Tests for meaningful business logic
+* Observability is part of the system
 * AI is optional and non-authoritative
 
-\---
+---
 
-## MVP scope
+## CI & Testing
 
-The initial version supports:
+Automated CI via GitHub Actions on every push to `main` and every pull request:
 
-* uploading two OpenAPI specs
-* optional changelog text input
-* parsing and validating JSON/YAML specs
-* normalization into a canonical model
-* deterministic diff computation
-* severity classification
-* persistence of runs and reports
-* report retrieval endpoints
-* health/readiness endpoints
-* metrics, traces, and structured logs
+* **Code quality:** formatting check with `ruff format --check` and linting with `ruff check`
+* **Database:** migration validation with `alembic upgrade head`
+* **Tests:** unit and integration tests covering diff engine, severity engine, API ingestion, report retrieval, run orchestration, health endpoints, and settings
+* **Container:** Docker image build and end-to-end smoke test against a live stack
 
-### Non-goals for the first version
+Run locally:
 
-The MVP intentionally does **not** include:
+```bash
+make check          # lint + test
+./scripts/smoke.sh  # end-to-end smoke test
+```
 
-* remote URL fetching
-* GitHub/webhook integrations
-* Slack/Jira integrations
-* full frontend application
-* multi-tenant auth or RBAC
-* codebase impact analysis
-* autonomous AI decision-making
-* LLM-based override of deterministic results
+---
 
-\---
+## Configuration
 
-## Demo / portfolio notes
+Configuration is managed via environment variables. Copy `.env.example` to `.env` for defaults — it includes all available options with sensible defaults.
 
-For demos, the easiest path is:
+Key settings:
 
-1. start the stack with Docker Compose
-2. open Swagger UI
-3. upload two example specs
-4. wait for the run to complete
-5. open the HTML demo report page
+| Variable | Default | Description |
+|---|---|---|
+| `APP_PORT` | `8000` | Host port exposed by Docker Compose |
+| `ENVIRONMENT` | `development` | Runtime environment label |
+| `ENABLE_LLM_CHANGELOG` | `false` | Optional AI changelog interpretation (deterministic results remain authoritative) |
 
-This gives a clean recruiter / reviewer flow without needing a separate frontend.
+See [.env.example](.env.example) for the full list.
 
-\---
+---
 
 ## Troubleshooting
 
 ### `docker compose` says no configuration file provided
 
-You are not inside the repository folder that contains `docker-compose.yml`.
-
-Move into the project folder first, then run:
+You are not inside the repository folder that contains `docker-compose.yml`. Move into the project folder first, then run:
 
 ```bash
 docker compose pull
@@ -587,7 +248,7 @@ docker compose up -d
 Change the host port in `.env`:
 
 ```env
-APP\_PORT=8001
+APP_PORT=8001
 ```
 
 Then restart:
@@ -598,13 +259,11 @@ docker compose up -d
 
 ### Health check works but there is no UI homepage
 
-That is expected. This project is an API-first backend service.
-
-Use:
+That is expected. This project is an API-first backend service. Use:
 
 * `/docs` for Swagger UI
 * `/redoc` for alternate docs
-* `/api/v1/reports/<RUN\_ID>/demo` for the report demo page
+* `/api/v1/reports/<RUN_ID>/demo` for the report demo page
 
 ### Want to fully reset the stack?
 
@@ -612,9 +271,14 @@ Use:
 docker compose down -v
 ```
 
-\---
+---
 
 ## Author
 
 Built by **Fatih Ayıbasan** as a backend-focused portfolio project.
 
+* GitHub: [fatihaybsn](https://github.com/fatihaybsn)
+
+---
+
+> **Repo About suggestion:** `Backend service that compares OpenAPI specs, detects breaking changes, classifies risk, and produces structured reports. Live demo available.`
